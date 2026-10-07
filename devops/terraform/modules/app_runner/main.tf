@@ -106,7 +106,6 @@ resource "aws_apprunner_service" "backend" {
 
   health_check_configuration {
     protocol = "TCP"
-    port     = "8080"
   }
 
   instance_configuration {

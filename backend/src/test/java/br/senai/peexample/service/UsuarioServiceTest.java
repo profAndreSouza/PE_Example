@@ -15,8 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,5 +86,17 @@ class UsuarioServiceTest {
         when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> usuarioService.buscarPorId(99L));
+    }
+
+    @Test
+    @DisplayName("Deve devolver a página de usuários mapeada para DTO")
+    void listarUsuariosPaginados() {
+        Pageable pageable = PageRequest.of(0, 5);
+        when(usuarioRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(usuario), pageable, 1));
+
+        Page<UsuarioDTO> resultado = usuarioService.listarTodos("", pageable);
+
+        assertEquals(1, resultado.getTotalElements());
+        assertEquals("Maria Silva", resultado.getContent().get(0).getNome());
     }
 }

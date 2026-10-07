@@ -9,7 +9,7 @@ Aplicação web desenvolvida em **React 18**, **TypeScript** e **Vite**, consumi
 - `src/services/`: Cliente HTTP Axios para comunicação com os endpoints `/api/usuarios` e `/api/projetos-extensao`.
 - `src/types/`: Interfaces TypeScript representando o domínio do sistema.
 
-As páginas oferecem busca no servidor e paginação. Os componentes compartilhados incluem tabela, alertas e controles de paginação.
+As páginas oferecem busca no servidor e paginação. Os componentes compartilhados incluem tabela, modal de formulário, alertas e controles de paginação.
 
 ## 🚀 Como Executar
 

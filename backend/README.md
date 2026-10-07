@@ -37,6 +37,14 @@ A API estará acessível em: `http://localhost:8080`
 
 ### Rodar Testes Unitários
 
+Com Docker, na raiz do repositório:
+
+```bash
+docker compose --profile tests run --rm backend-tests
+```
+
+Ou localmente, com JDK/Maven:
+
 ```bash
 mvn test
 ```

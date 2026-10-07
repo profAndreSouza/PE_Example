@@ -8,6 +8,7 @@ test('cadastra usuário e projeto de extensão associado', async ({ page, reques
 
   try {
     await page.goto('/');
+    await page.getByRole('button', { name: 'Novo Usuário' }).click();
     await page.getByPlaceholder('Ex: Maria Silva').fill('Usuário Jornada E2E');
     await page.getByPlaceholder('maria@senai.br').fill(email);
     await page.getByRole('button', { name: 'Cadastrar Usuário' }).click();
@@ -20,6 +21,7 @@ test('cadastra usuário e projeto de extensão associado', async ({ page, reques
     await expect(page.getByText('Usuário cadastrado com sucesso!')).toBeVisible();
 
     await page.getByRole('button', { name: /Projetos de Extensão/ }).click();
+    await page.getByRole('button', { name: 'Novo Projeto' }).click();
     await page.getByPlaceholder('Ex: Inclusão Digital').fill('Projeto Jornada E2E');
     await page.getByPlaceholder('Descrição detalhada do projeto...').fill('Projeto associado ao usuário criado na jornada.');
     await page.locator('select').first().selectOption(String(usuarioId));

@@ -3,6 +3,7 @@ import { ProjetoExtensao, ProjetoExtensaoCreateDTO, StatusProjeto, Usuario } fro
 import { apiErrorMessage, projetoService, usuarioService } from '../services/api';
 import { AlertMessage } from '../components/AlertMessage';
 import { DataTable } from '../components/DataTable';
+import { FormModal } from '../components/FormModal';
 import { PaginationControls } from '../components/PaginationControls';
 
 export const ProjetosPage: React.FC = () => {
@@ -15,6 +16,7 @@ export const ProjetosPage: React.FC = () => {
   const [pagina, setPagina] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalProjetos, setTotalProjetos] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ProjetoExtensaoCreateDTO>({
@@ -77,6 +79,7 @@ export const ProjetosPage: React.FC = () => {
 
   const handleEdit = (p: ProjetoExtensao) => {
     setEditingId(p.id);
+    setFormOpen(true);
     setFormData({
       titulo: p.titulo,
       descricao: p.descricao,
@@ -101,6 +104,7 @@ export const ProjetosPage: React.FC = () => {
 
   const resetForm = () => {
     setEditingId(null);
+    setFormOpen(false);
     setFormData({
       titulo: '',
       descricao: '',
@@ -115,111 +119,120 @@ export const ProjetosPage: React.FC = () => {
     <div className="container my-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>📋 Gestão de Projetos de Extensão</h2>
-        <span className="badge bg-secondary">{totalProjetos} Projetos Cadastrados</span>
+        <div className="d-flex align-items-center gap-2">
+          <span className="badge bg-secondary">{totalProjetos} Projetos Cadastrados</span>
+          <button
+            className="btn btn-primary"
+            disabled={professores.length === 0}
+            onClick={() => {
+              resetForm();
+              setFormOpen(true);
+            }}
+          >
+            Novo Projeto
+          </button>
+        </div>
       </div>
 
       {error && <AlertMessage variant="danger">{error}</AlertMessage>}
       {success && <AlertMessage variant="success">{success}</AlertMessage>}
 
-      <div className="row g-4">
-        {/* Form Column */}
-        <div className="col-md-4">
-          <div className="card shadow-sm">
-            <div className="card-header bg-dark text-white fw-bold">
-              {editingId ? '✏️ Editar Projeto' : '➕ Novo Projeto'}
+      <FormModal
+        open={formOpen}
+        title={editingId ? 'Editar Projeto' : 'Novo Projeto'}
+        onClose={resetForm}
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="projeto-titulo">Título do Projeto</label>
+            <input
+              id="projeto-titulo"
+              type="text"
+              className="form-control"
+              required
+              value={formData.titulo}
+              onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+              placeholder="Ex: Inclusão Digital"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="projeto-descricao">Descrição</label>
+            <textarea
+              id="projeto-descricao"
+              className="form-control"
+              rows={3}
+              required
+              value={formData.descricao}
+              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+              placeholder="Descrição detalhada do projeto..."
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="projeto-coordenador">Coordenador (Professor)</label>
+            <select
+              id="projeto-coordenador"
+              className="form-select"
+              required
+              value={formData.coordenadorId}
+              onChange={(e) => setFormData({ ...formData, coordenadorId: Number(e.target.value) })}
+            >
+              <option value={0}>Selecione um Professor...</option>
+              {professores.map((prof) => (
+                <option key={prof.id} value={prof.id}>
+                  {prof.nome} ({prof.email})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="projeto-status">Status</label>
+            <select
+              id="projeto-status"
+              className="form-select"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusProjeto })}
+            >
+              <option value="EM_ANALISE">Em Análise</option>
+              <option value="EM_ANDAMENTO">Em Andamento</option>
+              <option value="CONCLUIDO">Concluído</option>
+            </select>
+          </div>
+          <div className="row">
+            <div className="col-6 mb-3">
+              <label className="form-label" htmlFor="projeto-data-inicio">Data Início</label>
+              <input
+                id="projeto-data-inicio"
+                type="date"
+                className="form-control"
+                required
+                value={formData.dataInicio}
+                onChange={(e) => setFormData({ ...formData, dataInicio: e.target.value })}
+              />
             </div>
-            <div className="card-body">
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label">Título do Projeto</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    required
-                    value={formData.titulo}
-                    onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                    placeholder="Ex: Inclusão Digital"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Descrição</label>
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    required
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                    placeholder="Descrição detalhada do projeto..."
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Coordenador (Professor)</label>
-                  <select
-                    className="form-select"
-                    required
-                    value={formData.coordenadorId}
-                    onChange={(e) => setFormData({ ...formData, coordenadorId: Number(e.target.value) })}
-                  >
-                    <option value={0}>Selecione um Professor...</option>
-                    {professores.map((prof) => (
-                      <option key={prof.id} value={prof.id}>
-                        {prof.nome} ({prof.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Status</label>
-                  <select
-                    className="form-select"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusProjeto })}
-                  >
-                    <option value="EM_ANALISE">Em Análise</option>
-                    <option value="EM_ANDAMENTO">Em Andamento</option>
-                    <option value="CONCLUIDO">Concluído</option>
-                    <option value="CANCELADO">Cancelado</option>
-                  </select>
-                </div>
-                <div className="row">
-                  <div className="col-6 mb-3">
-                    <label className="form-label">Data Início</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      required
-                      value={formData.dataInicio}
-                      onChange={(e) => setFormData({ ...formData, dataInicio: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-6 mb-3">
-                    <label className="form-label">Data Fim</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={formData.dataFim}
-                      onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="d-grid gap-2">
-                  <button type="submit" className="btn btn-primary">
-                    {editingId ? 'Salvar Alterações' : 'Cadastrar Projeto'}
-                  </button>
-                  {editingId && (
-                    <button type="button" className="btn btn-outline-secondary" onClick={resetForm}>
-                      Cancelar
-                    </button>
-                  )}
-                </div>
-              </form>
+            <div className="col-6 mb-3">
+              <label className="form-label" htmlFor="projeto-data-fim">Data Fim</label>
+              <input
+                id="projeto-data-fim"
+                type="date"
+                className="form-control"
+                value={formData.dataFim}
+                onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
+              />
             </div>
           </div>
-        </div>
+          <div className="d-flex justify-content-end gap-2">
+            <button type="button" className="btn btn-outline-secondary" onClick={resetForm}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary">
+              {editingId ? 'Salvar Alterações' : 'Cadastrar Projeto'}
+            </button>
+          </div>
+        </form>
+      </FormModal>
 
-        {/* Table Column */}
-        <div className="col-md-8">
+      <div className="row g-4">
+        <div className="col-12">
           <div className="card shadow-sm">
             <div className="card-header bg-white fw-bold">Lista de Projetos de Extensão</div>
             <div className="p-3">
@@ -263,8 +276,6 @@ export const ProjetosPage: React.FC = () => {
                             ? 'bg-primary'
                             : projeto.status === 'CONCLUIDO'
                             ? 'bg-success'
-                            : projeto.status === 'CANCELADO'
-                            ? 'bg-danger'
                             : 'bg-warning text-dark'
                         }`}
                       >

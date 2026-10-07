@@ -3,6 +3,7 @@ import { Usuario, UsuarioCreateDTO, TipoUsuario, StatusUsuario } from '../types'
 import { apiErrorMessage, usuarioService } from '../services/api';
 import { AlertMessage } from '../components/AlertMessage';
 import { DataTable } from '../components/DataTable';
+import { FormModal } from '../components/FormModal';
 import { PaginationControls } from '../components/PaginationControls';
 
 export const UsuariosPage: React.FC = () => {
@@ -14,6 +15,7 @@ export const UsuariosPage: React.FC = () => {
   const [pagina, setPagina] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalUsuarios, setTotalUsuarios] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<UsuarioCreateDTO>({
@@ -62,6 +64,7 @@ export const UsuariosPage: React.FC = () => {
 
   const handleEdit = (user: Usuario) => {
     setEditingId(user.id);
+    setFormOpen(true);
     setFormData({
       nome: user.nome,
       email: user.email,
@@ -84,6 +87,7 @@ export const UsuariosPage: React.FC = () => {
 
   const resetForm = () => {
     setEditingId(null);
+    setFormOpen(false);
     setFormData({ nome: '', email: '', tipo: 'PROFESSOR', status: 'ATIVO' });
   };
 
@@ -91,84 +95,91 @@ export const UsuariosPage: React.FC = () => {
     <div className="container my-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>👥 Gestão de Usuários</h2>
-        <span className="badge bg-secondary">{totalUsuarios} Usuários Cadastrados</span>
+        <div className="d-flex align-items-center gap-2">
+          <span className="badge bg-secondary">{totalUsuarios} Usuários Cadastrados</span>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              resetForm();
+              setFormOpen(true);
+            }}
+          >
+            Novo Usuário
+          </button>
+        </div>
       </div>
 
       {error && <AlertMessage variant="danger">{error}</AlertMessage>}
       {success && <AlertMessage variant="success">{success}</AlertMessage>}
 
-      <div className="row g-4">
-        {/* Form Column */}
-        <div className="col-md-4">
-          <div className="card shadow-sm">
-            <div className="card-header bg-dark text-white fw-bold">
-              {editingId ? '✏️ Editar Usuário' : '➕ Novo Usuário'}
-            </div>
-            <div className="card-body">
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label">Nome Completo</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    required
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    placeholder="Ex: Maria Silva"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">E-mail</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="maria@senai.br"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Tipo de Usuário</label>
-                  <select
-                    className="form-select"
-                    value={formData.tipo}
-                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoUsuario })}
-                  >
-                    <option value="ALUNO">Aluno</option>
-                    <option value="PROFESSOR">Professor</option>
-                    <option value="ADMINISTRADOR">Administrador</option>
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Status</label>
-                  <select
-                    className="form-select"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusUsuario })}
-                  >
-                    <option value="ATIVO">Ativo</option>
-                    <option value="INATIVO">Inativo</option>
-                  </select>
-                </div>
-
-                <div className="d-grid gap-2">
-                  <button type="submit" className="btn btn-primary">
-                    {editingId ? 'Salvar Alterações' : 'Cadastrar Usuário'}
-                  </button>
-                  {editingId && (
-                    <button type="button" className="btn btn-outline-secondary" onClick={resetForm}>
-                      Cancelar
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
+      <FormModal
+        open={formOpen}
+        title={editingId ? 'Editar Usuário' : 'Novo Usuário'}
+        onClose={resetForm}
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="usuario-nome">Nome Completo</label>
+            <input
+              id="usuario-nome"
+              type="text"
+              className="form-control"
+              required
+              value={formData.nome}
+              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+              placeholder="Ex: Maria Silva"
+            />
           </div>
-        </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="usuario-email">E-mail</label>
+            <input
+              id="usuario-email"
+              type="email"
+              className="form-control"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="maria@senai.br"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="usuario-tipo">Tipo de Usuário</label>
+            <select
+              id="usuario-tipo"
+              className="form-select"
+              value={formData.tipo}
+              onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoUsuario })}
+            >
+              <option value="ALUNO">Aluno</option>
+              <option value="PROFESSOR">Professor</option>
+              <option value="ADMINISTRADOR">Administrador</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="form-label" htmlFor="usuario-status">Status</label>
+            <select
+              id="usuario-status"
+              className="form-select"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusUsuario })}
+            >
+              <option value="ATIVO">Ativo</option>
+              <option value="INATIVO">Inativo</option>
+            </select>
+          </div>
+          <div className="d-flex justify-content-end gap-2">
+            <button type="button" className="btn btn-outline-secondary" onClick={resetForm}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary">
+              {editingId ? 'Salvar Alterações' : 'Cadastrar Usuário'}
+            </button>
+          </div>
+        </form>
+      </FormModal>
 
-        {/* Table Column */}
-        <div className="col-md-8">
+      <div className="row g-4">
+        <div className="col-12">
           <div className="card shadow-sm">
             <div className="card-header bg-white fw-bold">Lista de Usuários</div>
             <div className="p-3">

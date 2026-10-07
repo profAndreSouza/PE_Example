@@ -27,7 +27,7 @@ export interface UsuarioCreateDTO {
   status: StatusUsuario;
 }
 
-export type StatusProjeto = 'EM_ANALISE' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO';
+export type StatusProjeto = 'EM_ANALISE' | 'EM_ANDAMENTO' | 'CONCLUIDO';
 
 export interface ProjetoExtensao {
   id: number;

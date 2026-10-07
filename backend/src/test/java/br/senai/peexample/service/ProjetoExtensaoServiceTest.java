@@ -17,8 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -93,5 +98,18 @@ class ProjetoExtensaoServiceTest {
 
         assertThrows(BusinessException.class, () -> projetoExtensaoService.criar(createDTO));
         verify(projetoExtensaoRepository, never()).save(any(ProjetoExtensao.class));
+    }
+
+    @Test
+    @DisplayName("Deve devolver a página de projetos mapeada para DTO")
+    void listarProjetosPaginados() {
+        Pageable pageable = PageRequest.of(0, 5);
+        when(projetoExtensaoRepository.findAll(pageable))
+                .thenReturn(new PageImpl<>(List.of(projeto), pageable, 1));
+
+        Page<ProjetoExtensaoDTO> resultado = projetoExtensaoService.listarTodos("", pageable);
+
+        assertEquals(1, resultado.getTotalElements());
+        assertEquals("Robótica nas Escolas", resultado.getContent().get(0).getTitulo());
     }
 }

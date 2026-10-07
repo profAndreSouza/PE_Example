@@ -6,7 +6,7 @@ Este diretório armazena a **estratégia transversal de testes**, coleções de 
 
 - `docs/`: Estratégias de qualidade, pirâmide de testes e matrizes de aceitação.
 - `templates/`: Modelos padronizados de relatos de defeito e evidências de testes para os alunos.
-- `tests/api/`: Coleções de testes automatizados HTTP (Postman / Newman).
+- `tests/api/`: testes automatizados HTTP da API e coleção importável no Postman.
 - `tests/e2e/`: Jornadas de ponta a ponta da interface com Playwright.
 
 ## Camadas de teste
@@ -16,6 +16,8 @@ Este diretório armazena a **estratégia transversal de testes**, coleções de 
 - `quality/tests/e2e`: testes de navegador que atravessam frontend, API e PostgreSQL.
 
 Essas suítes não são duplicadas: `backend` dá feedback rápido e localiza falhas de lógica Java; `quality` valida a integração dos componentes e os fluxos do ponto de vista do cliente.
+
+Para executar somente os testes Java em um container Maven, use `docker compose --profile tests run --rm backend-tests` na raiz.
 
 ## Executar API e E2E em Docker
 

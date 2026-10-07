@@ -41,7 +41,7 @@ services:
       - backend
 
   quality:
-    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
     profiles: ["quality"]
     working_dir: /work
     environment:
@@ -55,6 +55,16 @@ services:
       - backend
       - frontend
 
+  backend-tests:
+    image: maven:3.9.9-eclipse-temurin-21-alpine
+    profiles: ["tests"]
+    working_dir: /workspace
+    volumes:
+      - ./backend:/workspace
+      - maven_cache:/root/.m2
+    command: mvn --batch-mode test
+
 volumes:
   pgdata:
   quality_node_modules:
+  maven_cache:

@@ -2,6 +2,8 @@
 **/dist/
 **/target/
 **/.terraform/
+quality/test-results/
+quality/playwright-report/
 *.tfstate
 *.tfstate.*
 .env

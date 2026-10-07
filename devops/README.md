@@ -35,7 +35,11 @@ terraform fmt -check -recursive
 # Validar sintaxe dos módulos
 terraform validate
 
-# Planejar com variáveis fornecidas sem gravar segredos no repositório
+```
+
+No PowerShell, forneça as variáveis e planeje:
+
+```powershell
 $env:TF_VAR_db_password = "<senha-com-pelo-menos-16-caracteres>"
 $env:TF_VAR_app_image_identifier = "public.ecr.aws/<alias>/<repositorio>:<tag>"
 terraform plan
