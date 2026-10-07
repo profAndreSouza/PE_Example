@@ -9,20 +9,48 @@
       "item": [
         {
           "name": "Listar Usuários",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna paginação de usuários', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/usuarios",
+              "raw": "http://localhost:8080/api/usuarios?page=0&size=10",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
-              "path": ["api", "usuarios"]
+              "path": ["api", "usuarios"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
             }
           }
         },
         {
           "name": "Criar Usuário Valido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cria usuário com HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Resposta inclui id e email', () => { const body = pm.response.json(); pm.expect(body.id).to.exist; pm.expect(body.email).to.exist; });"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -30,7 +58,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"Aluno Teste QA\",\n  \"email\": \"qa.aluno@senai.br\",\n  \"tipo\": \"ALUNO\",\n  \"status\": \"ATIVO\"\n}"
+              "raw": "{\n  \"nome\": \"Aluno Teste QA\",\n  \"email\": \"{{$randomEmail}}\",\n  \"tipo\": \"ALUNO\",\n  \"status\": \"ATIVO\"\n}"
             },
             "url": {
               "raw": "http://localhost:8080/api/usuarios",
@@ -48,15 +76,31 @@
       "item": [
         {
           "name": "Listar Projetos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna paginação de projetos', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/projetos-extensao",
+              "raw": "http://localhost:8080/api/projetos-extensao?page=0&size=10",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
-              "path": ["api", "projetos-extensao"]
+              "path": ["api", "projetos-extensao"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
             }
           }
         }
