@@ -11,11 +11,13 @@ Este diretório armazena a **estratégia transversal de testes**, coleções de 
 
 ## Camadas de teste
 
-- `backend/src/test`: testes unitários de Service e testes MVC de Controller, executados isoladamente com JUnit/Mockito.
+- `backend/src/test`: testes unitários de Service e testes MVC de Controller, implementados e mantidos pela equipe Quality e executados pelo Maven com JUnit/Mockito.
 - `quality/tests/api`: testes HTTP contra a API real e o banco; verificam status, validação, regras de negócio e associação.
 - `quality/tests/e2e`: testes de navegador que atravessam frontend, API e PostgreSQL.
 
-Essas suítes não são duplicadas: `backend` dá feedback rápido e localiza falhas de lógica Java; `quality` valida a integração dos componentes e os fluxos do ponto de vista do cliente.
+O local `backend/src/test` é uma convenção técnica do Maven: os testes Java precisam compilar junto ao projeto e importar seus tipos. Isso não transfere sua autoria à equipe Backend. Neste projeto, Quality define e implementa os testes unitários e de controller; Backend esclarece regras e apoia a testabilidade do código de produção.
+
+DevOps é responsável por configurar e manter os workflows que executam os testes. Por exemplo, `backend-ci.yml` executa `mvn clean verify`, que compila e roda os testes Java escritos por Quality; `quality-ci.yml` executa os testes HTTP e E2E. A equipe responsável pelo código analisa falhas conforme a causa: Quality para asserção/cenário, Backend para comportamento de produção e DevOps para configuração do pipeline.
 
 Para executar somente os testes Java em um container Maven, use `docker compose --profile tests run --rm backend-tests` na raiz.
 

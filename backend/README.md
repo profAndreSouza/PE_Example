@@ -37,6 +37,8 @@ A API estará acessível em: `http://localhost:8080`
 
 ### Rodar Testes Unitários
 
+Neste projeto, a equipe Quality define e mantém os testes unitários e de controller. Os arquivos ficam em `src/test/java` por convenção do Maven e por precisarem compilar junto ao código Java. A equipe Backend esclarece as regras e apoia mudanças de testabilidade no código de produção. A pipeline que os executa é mantida pela equipe DevOps.
+
 Com Docker, na raiz do repositório:
 
 ```bash

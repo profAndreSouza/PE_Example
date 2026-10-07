@@ -9,9 +9,12 @@ Este diretório contém os artefatos de **Infraestrutura como Código (IaC)** em
   - `modules/rds`: Instância do PostgreSQL na AWS.
   - `modules/app_runner`: Hospedagem serverless de containers.
 - `.github/workflows/`: Pipelines de integração e entrega contínua:
-  - `backend-ci.yml`: Build Maven, compilação Java 21 e execução de suítes de testes unitários.
+  - `backend-ci.yml`: Build Maven e execução dos testes Java unitários e de controller implementados por Quality.
   - `frontend-ci.yml`: Validação TypeScript, linting e build React Vite.
+  - `quality-ci.yml`: Execução dos testes de API e E2E integrados.
   - `infra-ci.yml`: Validação e verificação de formatação dos arquivos Terraform.
+
+A equipe DevOps é responsável por criar e manter os workflows, configurar gatilhos, runners, versões e comandos, e disponibilizar os resultados. A autoria dos casos de teste pertence à equipe Quality. Os testes Java ficam em `backend/src/test` por convenção Maven, mas essa localização não altera a responsabilidade por sua implementação.
 
 ## 🚀 Como Executar o Terraform Localmente
 

@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PE_Example — Fluxos de Backend e Quality</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #f3f5f8;
+      --surface: #ffffff;
+      --text: #17212b;
+      --muted: #536273;
+      --primary: #184b83;
+      --primary-light: #e8f0f8;
+      --border: #d4dde7;
+      --code: #14212f;
+      --accent: #a44c00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font: 16px/1.55 "Segoe UI", Arial, sans-serif;
+    }
+    button { font: inherit; }
+    .progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      z-index: 5;
+      height: 4px;
+      background: var(--primary);
+      transition: width .2s ease;
+    }
+    .deck { padding: 42px 7vw 90px; }
+    .slide {
+      display: none;
+      width: min(1160px, 100%);
+      min-height: 78vh;
+      margin: 0 auto;
+    }
+    .slide.active { display: block; }
+    .section-label {
+      margin: 0;
+      color: var(--primary);
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    h1, h2 {
+      max-width: 1000px;
+      margin: 15px 0 16px;
+      font-size: clamp(2rem, 4.4vw, 3.65rem);
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+    h1 { font-size: clamp(2.6rem, 5.2vw, 4.8rem); }
+    h3 { margin: 0 0 7px; font-size: 1.12rem; }
+    p { margin: 0 0 12px; }
+    .lead { max-width: 900px; color: var(--muted); font-size: 1.18rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .card p:last-child { margin-bottom: 0; }
+    .muted { color: var(--muted); }
+    .small { font-size: .9rem; }
+    .sequence {
+      display: flex;
+      align-items: stretch;
+      gap: 9px;
+      margin: 24px 0;
+    }
+    .step {
+      flex: 1;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid #aac0d6;
+      border-radius: 7px;
+      background: var(--surface);
+    }
+    .step b { display: block; margin-bottom: 4px; color: var(--primary); }
+    .arrow { align-self: center; color: var(--muted); font-size: 1.35rem; }
+    pre {
+      max-width: 100%;
+      margin: 18px 0;
+      padding: 17px 19px;
+      overflow: auto;
+      border-radius: 8px;
+      background: var(--code);
+      color: #edf3f8;
+      font: .87rem/1.55 Consolas, "Courier New", monospace;
+      tab-size: 2;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    code { font-family: Consolas, "Courier New", monospace; }
+    :not(pre) > code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #e9edf2;
+      font-size: .92em;
+    }
+    .callout {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: #fff7ed;
+    }
+    .callout p:last-child { margin-bottom: 0; }
+    .table-wrap { overflow-x: auto; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); }
+    th, td { padding: 11px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--primary-light); color: var(--primary); }
+    ol, ul { padding-left: 1.3rem; }
+    li { margin: 5px 0; }
+    .toolbar {
+      position: fixed;
+      z-index: 4;
+      inset: auto 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px;
+      border-top: 1px solid var(--border);
+      background: rgb(255 255 255 / 96%);
+    }
+    .toolbar button {
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .toolbar button:focus-visible { outline: 3px solid #83add4; outline-offset: 2px; }
+    .counter { min-width: 70px; text-align: center; color: var(--muted); }
+    @media (max-width: 850px) {
+      .deck { padding: 28px 18px 82px; }
+      .grid, .grid.two, .grid.four { grid-template-columns: 1fr; }
+      .sequence { flex-direction: column; }
+      .arrow { align-self: center; transform: rotate(90deg); }
+    }
+    @media print {
+      body { background: white; font-size: 11pt; }
+      .deck { padding: 0; }
+      .slide, .slide.active {
+        display: block;
+        width: 100%;
+        min-height: 0;
+        padding: 14mm 12mm;
+        page-break-after: always;
+      }
+      .slide:last-child { page-break-after: auto; }
+      .toolbar, .progress { display: none; }
+      pre { white-space: pre-wrap; }
+      .card, pre, table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <main class="deck">
+    <section class="slide active">
+      <p class="section-label">PE_Example · apresentação técnica</p>
+      <h1>Fluxo de trabalho das equipes Backend, Quality e DevOps</h1>
+      <p class="lead">Passo a passo da implementação da API, da definição dos contratos até a validação integrada. Backend e Quality desenvolvem em paralelo; DevOps automatiza os testes em pipelines.</p>
+      <div class="grid two">
+        <article class="card"><h3>Backend</h3><p>Java 21, Spring Boot 3, Spring Data JPA e PostgreSQL.</p></article>
+        <article class="card"><h3>Quality</h3><p>Especifica e implementa testes unitários, de controller, API e E2E.</p></article>
+        <article class="card"><h3>DevOps</h3><p>Configura e mantém as pipelines que compilam e executam as suítes.</p></article>
+      </div>
+      <p class="small muted">Escopo funcional: CRUD de usuários e CRUD de projetos de extensão.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">01 · Objetivo e escopo</p>
+      <h2>O produto e o fluxo que serão explicados</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Usuário</h3>
+          <p>Cadastro, consulta, atualização e remoção. Campos: nome, e-mail, tipo e status.</p>
+          <p class="small"><code>ALUNO</code>, <code>PROFESSOR</code>, <code>ADMINISTRADOR</code>; <code>ATIVO</code>, <code>INATIVO</code>.</p>
+        </article>
+        <article class="card">
+          <h3>Projeto de extensão</h3>
+          <p>Cadastro, consulta, atualização e remoção. Cada projeto referencia um usuário coordenador.</p>
+          <p class="small"><code>EM_ANALISE</code>, <code>EM_ANDAMENTO</code>, <code>CONCLUIDO</code>.</p>
+        </article>
+      </div>
+      <div class="callout"><p><b>Regra de integração:</b> não se testa apenas se a tela ou a API existe. É preciso validar que os dados atravessam as camadas e preservam as regras do domínio.</p></div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">02 · Responsabilidades</p>
+      <h2>As equipes têm objetivos diferentes e complementares</h2>
+      <div class="grid three">
+        <article class="card">
+          <h3>Equipe Backend</h3>
+          <ul>
+            <li>Implementar os endpoints e o contrato JSON.</li>
+            <li>Validar entrada e regras de negócio.</li>
+            <li>Persistir dados e relações no PostgreSQL.</li>
+            <li>Entregar respostas e erros consistentes.</li>
+            <li>Fornecer regras, contratos e código testável; apoiar Quality na análise de falhas.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Equipe Quality</h3>
+          <ul>
+            <li>Transformar requisitos em cenários verificáveis.</li>
+            <li>Implementar testes unitários, de controller, API e E2E.</li>
+            <li>Testar o serviço HTTP real e os dados persistidos.</li>
+            <li>Verificar fluxos completos no navegador.</li>
+            <li>Reproduzir falhas com entradas e resultados esperados.</li>
+            <li>Registrar evidências e tornar a execução repetível.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Equipe DevOps</h3>
+          <ul>
+            <li>Criar e manter workflows no GitHub Actions.</li>
+            <li>Configurar versões, dependências, cache e serviços de CI.</li>
+            <li>Executar as suítes Java, frontend, API e E2E.</li>
+            <li>Publicar resultados e evidências das execuções.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">03 · Trabalho paralelo</p>
+      <h2>O paralelismo começa pelo contrato</h2>
+      <div class="sequence">
+        <div class="step"><b>1. Alinhar</b>Requisitos, payloads, regras e códigos HTTP.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>2. Dividir</b>Backend implementa; Quality escreve testes; DevOps configura a execução automatizada.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>3. Integrar</b>Executar os testes contra a implementação real.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>4. Corrigir</b>Reproduzir falhas e reexecutar os mesmos casos.</div>
+      </div>
+      <div class="grid two">
+        <article class="card"><h3>Backend não precisa esperar</h3><p>Define DTOs, regras e assinaturas. Compartilha exemplos e ajusta o código para que possa ser testado.</p></article>
+        <article class="card"><h3>Quality não precisa esperar</h3><p>Escreve testes Java com base nas regras e prepara os testes de API/E2E com base no contrato.</p></article>
+      </div>
+      <div class="callout"><p>DevOps também começa cedo: configura os workflows enquanto Backend e Quality implementam código e testes. O ponto de sincronização é o contrato, não uma entrega em cascata.</p></div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">04 · Contrato de integração</p>
+      <h2>O que deve ser combinado antes de codificar</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Item</th><th>Exemplo deste projeto</th><th>Como Quality verifica</th></tr></thead>
+          <tbody>
+            <tr><td>Rota</td><td><code>POST /api/usuarios</code></td><td>Endereço e método HTTP.</td></tr>
+            <tr><td>Entrada</td><td><code>nome</code>, <code>email</code>, <code>tipo</code>, <code>status</code></td><td>Campos aceitos e obrigatórios.</td></tr>
+            <tr><td>Sucesso</td><td><code>201 Created</code> com o usuário persistido.</td><td>Status, JSON e identificador.</td></tr>
+            <tr><td>Falhas</td><td><code>400</code> para validação/regra; <code>404</code> para recurso ausente.</td><td>Status e corpo de erro.</td></tr>
+            <tr><td>Listagem</td><td><code>page</code>, <code>size</code>, <code>busca</code>.</td><td>Campos de paginação e filtro.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">05 · Estrutura do backend</p>
+      <h2>Uma requisição percorre camadas com responsabilidades separadas</h2>
+      <div class="sequence">
+        <div class="step"><b>HTTP</b>Controller recebe a chamada.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>Entrada</b>DTO e Bean Validation verificam formato e obrigatoriedade.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>Regra</b>Service aplica a lógica do caso de uso.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>Persistência</b>Repository acessa as entidades JPA.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>Resposta</b>DTO convertido para JSON e status HTTP.</div>
+      </div>
+      <pre><code>frontend → Controller → DTO/validação → Service → Repository → PostgreSQL
+                                      ← DTO de resposta ←</code></pre>
+      <p class="muted">Código relacionado: <code>backend/src/main/java/br/senai/peexample/</code>.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">06 · Modelagem</p>
+      <h2>As entidades refletem o modelo relacional</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3><code>Usuario</code></h3>
+          <p>Entidade JPA mapeada para <code>tb_usuario</code>.</p>
+          <p class="small">Possui ID, nome, e-mail único, tipo, status e data de criação.</p>
+        </article>
+        <article class="card">
+          <h3><code>ProjetoExtensao</code></h3>
+          <p>Entidade JPA mapeada para <code>tb_projeto_extensao</code>.</p>
+          <p class="small">Contém título, descrição, status, datas e referência obrigatória ao coordenador.</p>
+        </article>
+      </div>
+      <pre><code>@ManyToOne(fetch = FetchType.LAZY, optional = false)
+@JoinColumn(name = "coordenador_id", nullable = false)
+private Usuario coordenador;</code></pre>
+      <p class="muted">Relação: um usuário pode coordenar vários projetos; cada projeto tem um coordenador.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">07 · DTO e validação</p>
+      <h2>O DTO protege a fronteira da API</h2>
+      <p>O cliente envia um objeto de entrada. A entidade não é exposta diretamente como contrato HTTP.</p>
+      <pre><code>public class UsuarioCreateDTO {
+  @NotBlank
+  @Size(max = 100)
+  private String nome;
+
+  @NotBlank
+  @Email
+  @Size(max = 150)
+  private String email;
+
+  @NotNull
+  private TipoUsuario tipo;
+
+  private StatusUsuario status;
+}</code></pre>
+      <div class="grid two">
+        <article class="card"><h3>Quando falha</h3><p><code>@Valid</code> interrompe o processamento antes do Service e o handler global devolve <code>400</code>.</p></article>
+        <article class="card"><h3>Quando passa</h3><p>O Service aplica as regras do domínio e transforma o resultado em DTO de resposta.</p></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">08 · Controller</p>
+      <h2>O controller traduz HTTP em chamada de caso de uso</h2>
+      <pre><code>@PostMapping
+public ResponseEntity&lt;UsuarioDTO&gt; criar(
+    @Valid @RequestBody UsuarioCreateDTO dto) {
+  UsuarioDTO criado = usuarioService.criar(dto);
+  return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+}</code></pre>
+      <div class="grid three">
+        <article class="card"><h3>Recebe</h3><p>JSON e parâmetros da rota.</p></article>
+        <article class="card"><h3>Delega</h3><p>Chama o Service; não contém regra de negócio.</p></article>
+        <article class="card"><h3>Responde</h3><p>DTO e código HTTP coerente com a operação.</p></article>
+      </div>
+      <p class="muted">Arquivos: <code>UsuarioController.java</code> e <code>ProjetoExtensaoController.java</code>.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">09 · Leitura, busca e paginação</p>
+      <h2>As listagens limitam volume e permitem pesquisa</h2>
+      <pre><code>GET /api/usuarios?page=0&amp;size=10&amp;busca=ana
+GET /api/projetos-extensao?page=0&amp;size=10&amp;busca=inclusao</code></pre>
+      <ol>
+        <li>Controller recebe <code>busca</code> e <code>Pageable</code>.</li>
+        <li>Sem termo, Service pede uma página ordenada ao Repository.</li>
+        <li>Com termo, Repository procura em nome/e-mail ou título/descrição, sem diferenciar maiúsculas.</li>
+        <li>Service transforma cada entidade em DTO preservando os metadados da página.</li>
+      </ol>
+      <pre><code>{
+  "content": [],
+  "totalElements": 0,
+  "totalPages": 0,
+  "number": 0,
+  "size": 10
+}</code></pre>
+      <p class="small muted">O backend limita o tamanho máximo de página a 100 registros.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">10 · Caso de uso: usuário</p>
+      <h2>Cadastro de usuário — sequência interna</h2>
+      <ol>
+        <li>Controller recebe <code>UsuarioCreateDTO</code> e executa validações declarativas.</li>
+        <li>Service consulta se o e-mail já existe.</li>
+        <li>Se existir, lança <code>BusinessException</code>; nenhum registro é salvo.</li>
+        <li>Se não existir, constrói a entidade e define <code>ATIVO</code> quando o status não foi informado.</li>
+        <li>Repository persiste a entidade e o Service devolve <code>UsuarioDTO</code>.</li>
+        <li>Controller responde <code>201 Created</code>.</li>
+      </ol>
+      <pre><code>if (usuarioRepository.existsByEmail(dto.getEmail())) {
+  throw new BusinessException("Já existe um usuário cadastrado...");
+}</code></pre>
+      <div class="callout"><p>Quality testa os dois caminhos: e-mail novo retorna 201; e-mail repetido retorna 400.</p></div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">11 · Caso de uso: projeto</p>
+      <h2>Cadastro de projeto — validar relações e datas</h2>
+      <ol>
+        <li>Validar campos obrigatórios do DTO.</li>
+        <li>Buscar o usuário informado em <code>coordenadorId</code>.</li>
+        <li>Se não existir, lançar <code>ResourceNotFoundException</code> e responder 404.</li>
+        <li>Se estiver inativo, lançar <code>BusinessException</code> e responder 400.</li>
+        <li>Se a data final anteceder a inicial, rejeitar o cadastro.</li>
+        <li>Persistir projeto e devolver DTO com ID e nome do coordenador.</li>
+      </ol>
+      <pre><code>if (coordenador.getStatus() == StatusUsuario.INATIVO)
+  throw new BusinessException("O coordenador selecionado está INATIVO.");
+
+if (dto.getDataFim() != null
+    &amp;&amp; dto.getDataFim().isBefore(dto.getDataInicio()))
+  throw new BusinessException("A data fim não pode ser anterior à data de início.");</code></pre>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">12 · Atualização e remoção</p>
+      <h2>As operações de escrita usam a mesma separação de camadas</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>PUT</h3>
+          <ol>
+            <li>Localizar o registro pelo ID.</li>
+            <li>Retornar 404 se não existir.</li>
+            <li>Revalidar e-mail ou coordenador e regras de negócio.</li>
+            <li>Atualizar campos, persistir e responder 200 com DTO.</li>
+          </ol>
+        </article>
+        <article class="card">
+          <h3>DELETE</h3>
+          <ol>
+            <li>Localizar o registro pelo ID.</li>
+            <li>Retornar 404 se não existir.</li>
+            <li>Solicitar remoção ao Repository.</li>
+            <li>Responder 204 sem corpo.</li>
+          </ol>
+        </article>
+      </div>
+      <p class="muted">A chave estrangeira restringe a exclusão de usuário que ainda coordena projetos.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">13 · Tratamento de erros</p>
+      <h2>Uma única camada converte exceções em respostas HTTP</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Situação</th><th>Exceção/condição</th><th>HTTP</th></tr></thead>
+          <tbody>
+            <tr><td>Entrada inválida</td><td>Bean Validation</td><td>400 + campos inválidos.</td></tr>
+            <tr><td>E-mail repetido, coordenador inativo ou datas inválidas</td><td><code>BusinessException</code></td><td>400 + mensagem de regra.</td></tr>
+            <tr><td>Usuário, projeto ou coordenador inexistente</td><td><code>ResourceNotFoundException</code></td><td>404 + mensagem.</td></tr>
+            <tr><td>Falha imprevista</td><td>Exceção não tratada</td><td>500 + mensagem genérica; detalhe fica no log.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Implementação: <code>GlobalExceptionHandler</code> anotado com <code>@RestControllerAdvice</code>.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">14 · Testes unitários · responsabilidade de Quality</p>
+      <h2>Quality implementa testes unitários para as regras do backend</h2>
+      <pre><code>@Test
+void lancarExcecaoCoordenadorInativo() {
+  coordenador.setStatus(StatusUsuario.INATIVO);
+  when(usuarioRepository.findById(1L))
+      .thenReturn(Optional.of(coordenador));
+
+  assertThrows(BusinessException.class,
+      () -&gt; projetoExtensaoService.criar(createDTO));
+
+  verify(projetoExtensaoRepository, never())
+      .save(any(ProjetoExtensao.class));
+}</code></pre>
+      <div class="grid three">
+        <article class="card"><h3>Preparar</h3><p>Criar DTO e entidades para um cenário conhecido.</p></article>
+        <article class="card"><h3>Executar</h3><p>Chamar diretamente o método do Service.</p></article>
+        <article class="card"><h3>Verificar</h3><p>Exceção esperada e ausência de persistência.</p></article>
+      </div>
+      <div class="grid two">
+        <article class="card"><h3>Responsabilidade de Quality</h3><p>Definir o cenário, a asserção e as interações esperadas; manter os testes JUnit/Mockito.</p></article>
+        <article class="card"><h3>Colaboração de Backend</h3><p>Explicar as regras e ajustar o código de produção quando necessário para facilitar testes confiáveis.</p></article>
+      </div>
+      <p class="muted">Os arquivos ficam em <code>backend/src/test/java/.../service/</code> porque Maven/Spring Boot descobrem e executam os testes Java nesse source set. O diretório não determina a equipe autora.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">15 · Testes de controller · responsabilidade de Quality</p>
+      <h2>Quality verifica o contrato MVC com MockMvc</h2>
+      <pre><code>@WebMvcTest(UsuarioController.class)
+class UsuarioControllerTest {
+  @Autowired MockMvc mockMvc;
+  @MockBean UsuarioService usuarioService;
+
+  @Test
+  void rejeitaUsuarioSemCamposObrigatorios() throws Exception {
+    mockMvc.perform(post("/api/usuarios")
+        .contentType(APPLICATION_JSON)
+        .content("{\"email\":\"invalido\"}"))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.fields").exists());
+  }
+}</code></pre>
+      <p><code>MockMvc</code> exercita roteamento e validação do Spring MVC. Quality mantém o teste; Backend apoia no entendimento dos endpoints. O Service é simulado: esse teste não comprova persistência, rede ou integração com PostgreSQL.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">16 · Automação · responsabilidade de DevOps</p>
+      <h2>DevOps configura a pipeline que executa os testes</h2>
+      <pre><code># Na raiz do repositório
+docker compose --profile tests run --rm backend-tests
+
+# Alternativa com Maven/JDK instalados em backend/
+mvn clean verify</code></pre>
+      <ol>
+        <li>DevOps define o gatilho: push ou pull request que altera o backend.</li>
+        <li>A pipeline prepara JDK 21 e cache Maven no runner.</li>
+        <li>Maven compila o código; JUnit executa os testes implementados por Quality.</li>
+        <li>O workflow publica sucesso ou falha; a proteção de branch do GitHub determina se a aprovação é obrigatória para merge.</li>
+        <li>Quality analisa a falha do teste; Backend corrige a implementação quando a causa está na regra/código.</li>
+      </ol>
+      <div class="callout"><p>O arquivo <code>.github/workflows/backend-ci.yml</code> é uma pipeline de responsabilidade DevOps. Ele executa <code>mvn --batch-mode clean verify</code>; não define a autoria dos testes.</p></div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">17 · Papel de Quality</p>
+      <h2>Quality verifica o comportamento observável do produto</h2>
+      <div class="grid three">
+        <article class="card"><h3>Testes HTTP</h3><p>Chamam a API real e verificam status, JSON, persistência e regras.</p></article>
+        <article class="card"><h3>Testes E2E</h3><p>Operam a interface real e atravessam frontend, backend e banco.</p></article>
+        <article class="card"><h3>Evidências</h3><p>Comando executado, versão, resultado, logs e dados usados.</p></article>
+      </div>
+      <p class="section-label" style="margin-top:24px">Distinção entre as suítes</p>
+      <div class="grid three">
+        <article class="card"><h3>Testes Java mantidos por Quality</h3><p>Ficam em <code>backend/src/test</code> por convenção de build; verificam regras Java e contrato MVC isoladamente.</p></article>
+        <article class="card"><h3>Quality: API e E2E</h3><p>Ficam em <code>quality/tests</code>; detectam incompatibilidades entre serviços, configuração, banco e interface.</p></article>
+      </div>
+      <p class="small muted">Autoria do teste (Quality), localização técnica (source set Java ou pasta quality) e execução automática (DevOps) são responsabilidades distintas.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">18 · Preparação de Quality</p>
+      <h2>Preparar os cenários enquanto o backend é implementado</h2>
+      <ol>
+        <li>Separar requisitos por recurso: usuário e projeto.</li>
+        <li>Escrever pré-condição, chamada, entrada, resultado esperado e limpeza.</li>
+        <li>Definir dados próprios por execução, por exemplo e-mail com timestamp.</li>
+        <li>Planejar cenários positivos e negativos antes de executar contra o serviço.</li>
+        <li>Usar o mesmo contrato acordado com Backend: nomes, status e formato de resposta.</li>
+      </ol>
+      <div class="grid two">
+        <article class="card"><h3>Cadastro positivo</h3><p>Usuário válido deve retornar 201 e ID. Projeto válido deve referenciar o coordenador enviado.</p></article>
+        <article class="card"><h3>Cadastro negativo</h3><p>Dados obrigatórios ausentes: 400. Coordenador inexistente: 404. E-mail repetido: 400.</p></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">19 · Testes de API</p>
+      <h2>Um teste HTTP executa uma sequência controlada</h2>
+      <ol>
+        <li>Aguardar a API ficar disponível.</li>
+        <li>Consultar uma página e validar <code>content</code>, <code>size</code> e status.</li>
+        <li>Enviar entrada inválida e verificar 400.</li>
+        <li>Criar usuário com e-mail exclusivo e guardar o ID retornado.</li>
+        <li>Repetir o e-mail para provar a regra de unicidade.</li>
+        <li>Criar projeto associado ao usuário e validar o relacionamento.</li>
+        <li>Enviar coordenador inexistente e datas inválidas; validar 404 e 400.</li>
+        <li>Remover os registros criados no bloco <code>finally</code>.</li>
+      </ol>
+      <p class="muted">Implementação: <code>quality/tests/api/api.test.js</code>, usando <code>node:test</code> e <code>fetch</code>.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">20 · Testes E2E</p>
+      <h2>A jornada E2E começa na interface e termina no banco</h2>
+      <div class="sequence">
+        <div class="step"><b>1. Navegador</b>Abrir frontend servido pelo Nginx.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>2. Usuário</b>Abrir modal, preencher nome/e-mail e submeter.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>3. API e banco</b>Confirmar cadastro e recuperar ID via API.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>4. Projeto</b>Abrir tela, selecionar o usuário e enviar o formulário.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>5. Conferir</b>Validar coordenador na API e mensagem na tela.</div>
+      </div>
+      <p>O teste exclui projeto e usuário no <code>finally</code>. Isso reduz resíduos e permite repetir a jornada.</p>
+      <p class="muted">Implementação: <code>quality/tests/e2e/extension-project.spec.ts</code>.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">21 · Execução integrada</p>
+      <h2>Compose fornece o mesmo ambiente para todos</h2>
+      <pre><code># Subir o sistema
+docker compose up --build -d
+
+# Executar os testes de integração/API e E2E
+docker compose --profile quality run --build --rm quality
+
+# Executar testes Java
+docker compose --profile tests run --rm backend-tests
+
+# Encerrar serviços sem apagar os dados
+docker compose down</code></pre>
+      <div class="grid three">
+        <article class="card"><h3>postgres</h3><p>Carrega schema e dados iniciais.</p></article>
+        <article class="card"><h3>backend e frontend</h3><p>API Spring e interface web com proxy para <code>/api</code>.</p></article>
+        <article class="card"><h3>quality</h3><p>Perfil opcional executa API e Playwright no mesmo Compose.</p></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">22 · Pipeline</p>
+      <h2>DevOps cria pipelines para executar as verificações</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pipeline mantida por DevOps</th><th>Verificações automatizadas</th><th>Falha indica</th></tr></thead>
+          <tbody>
+            <tr><td><code>backend-ci.yml</code></td><td>Maven <code>clean verify</code>.</td><td>Compilação, teste Java ou verificação Maven falhou.</td></tr>
+            <tr><td><code>frontend-ci.yml</code></td><td><code>npm ci</code>, ESLint, TypeScript e build Vite.</td><td>Lint, tipo ou build do cliente falhou.</td></tr>
+            <tr><td><code>quality-ci.yml</code></td><td>Compose, testes HTTP e Playwright.</td><td>Ambiente integrado ou fluxo funcional falhou.</td></tr>
+            <tr><td><code>infra-ci.yml</code></td><td><code>terraform fmt</code>, init sem backend e validate.</td><td>Formato, módulo ou sintaxe Terraform inválida.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Quality implementa as suítes e define critérios de aceite. DevOps configura quando e como elas rodam. Backend entrega os artefatos Java e ajuda a diagnosticar falhas de produção.</p>
+      <p class="small muted">A validação de Terraform verifica sintaxe e consistência; não provisiona recursos nem substitui um plano revisado.</p>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">23 · Paralelismo na prática</p>
+      <h2>Plano de trabalho conjunto por requisito</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Momento</th><th>Backend</th><th>Quality</th><th>DevOps</th><th>Integração</th></tr></thead>
+          <tbody>
+            <tr><td>Planejamento</td><td>Confirma regras, entidades e rotas.</td><td>Define critérios unitários, API e E2E.</td><td>Planeja gatilhos, runners e comandos.</td><td>Fecha payloads e códigos HTTP.</td></tr>
+            <tr><td>Implementação</td><td>Constrói DTO, Service, Repository e Controller.</td><td>Implementa testes Java em <code>backend/src/test</code> e suítes em <code>quality/tests</code>.</td><td>Cria workflows para rodar as suítes.</td><td>Todos usam o contrato acordado.</td></tr>
+            <tr><td>Primeira integração</td><td>Disponibiliza serviço via Compose e apoia diagnóstico.</td><td>Executa ou revisa casos; registra divergências.</td><td>Executa os jobs e publica o resultado.</td><td>Compara resultado real com esperado.</td></tr>
+            <tr><td>Correção</td><td>Corrige defeitos no código de produção.</td><td>Ajusta e mantém testes/regressões.</td><td>Corrige configuração da pipeline, se necessário.</td><td>Confirma que a correção não quebrou outros fluxos.</td></tr>
+            <tr><td>Entrega</td><td>Build de produção aprovado.</td><td>Suítes aprovadas e evidências disponíveis.</td><td>Jobs automatizados verdes.</td><td>Integração reproduzível.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">24 · Tratamento de falhas</p>
+      <h2>Como diagnosticar uma falha sem misturar camadas</h2>
+      <ol>
+        <li><b>Teste Java falhou:</b> conferir arrange/act/assert, mocks e regra do Service.</li>
+        <li><b>Controller falhou:</b> conferir rota, validação, conversão JSON e status.</li>
+        <li><b>Teste API falhou:</b> conferir containers, logs do backend, schema e dados de entrada.</li>
+        <li><b>Teste E2E falhou:</b> conferir seletor, estado da tela, proxy Nginx e resposta HTTP.</li>
+        <li><b>Falha de integração:</b> comparar contrato documentado com request/response reais.</li>
+        <li>Registrar passos e evidência antes de alterar o teste para fazê-lo passar.</li>
+      </ol>
+      <pre><code>docker compose ps
+docker compose logs --tail 100 backend postgres frontend</code></pre>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">25 · Critério de pronto</p>
+      <h2>Definição de concluído para Backend, Quality e DevOps</h2>
+      <div class="grid three">
+        <article class="card">
+          <h3>Backend pronto quando</h3>
+          <ul>
+            <li>Contrato, regras e validação estão implementados.</li>
+            <li>Aplicação sobe no Compose e conversa com PostgreSQL.</li>
+            <li>Colaborou na análise das falhas reportadas pelos testes.</li>
+            <li>Build do backend passa na pipeline.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Quality pronto quando</h3>
+          <ul>
+            <li>Cenários refletem requisitos e contrato vigente.</li>
+            <li>Testes unitários e de controller estão implementados.</li>
+            <li>API cobre sucesso e erros prioritários.</li>
+            <li>Jornada E2E confirma associação usuário–projeto.</li>
+            <li>Dados de teste são removidos e execução é reproduzível.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>DevOps pronto quando</h3>
+          <ul>
+            <li>Workflows cobrem backend, frontend, Quality e infraestrutura.</li>
+            <li>Comandos e versões estão configurados.</li>
+            <li>Jobs executam em push/PR relevante e mostram resultados.</li>
+            <li>Falhas ficam visíveis para as equipes responsáveis.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">26 · Sequência recomendada</p>
+      <h2>Passo a passo operacional da integração</h2>
+      <ol>
+        <li>Revisar requisito e DDL; confirmar nomes e cardinalidade.</li>
+        <li>Publicar contrato do endpoint: URL, request, response e falhas.</li>
+        <li>Quality escreve o teste unitário da regra; Backend implementa o Service e colabora na testabilidade.</li>
+        <li>Backend cria controller, validação e mapeamento de resposta.</li>
+        <li>Quality prepara teste HTTP com dados exclusivos e limpeza.</li>
+        <li>Quality prepara jornada UI com seletores estáveis e verificação via API.</li>
+        <li>DevOps cria workflows: Maven/JUnit, lint/build, API/E2E e Terraform.</li>
+        <li>Executar as pipelines a cada push/PR relevante.</li>
+        <li>Corrigir divergências na camada responsável e repetir a pipeline de regressão.</li>
+        <li>Entregar alterações com resultados de CI e evidências.</li>
+      </ol>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">27 · Referências no repositório</p>
+      <h2>Arquivos que materializam o fluxo apresentado</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Backend</h3>
+          <ul>
+            <li><code>backend/src/main/java/.../controller/</code></li>
+            <li><code>backend/src/main/java/.../service/</code></li>
+            <li><code>backend/src/main/java/.../repository/</code></li>
+            <li><code>backend/src/main/java/.../dto/</code></li>
+            <li><code>backend/src/test/java/.../</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Quality e execução</h3>
+          <ul>
+            <li><code>quality/tests/api/api.test.js</code></li>
+            <li><code>quality/tests/e2e/extension-project.spec.ts</code></li>
+            <li><code>quality/playwright.config.ts</code></li>
+            <li><code>.github/workflows/quality-ci.yml</code></li>
+            <li><code>compose.yaml</code></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="section-label">28 · Resumo</p>
+      <h2>Uma implementação, testes em níveis diferentes</h2>
+      <div class="sequence">
+        <div class="step"><b>Contrato</b>As equipes alinham entrada, saída e regras.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>Backend</b>Implementa endpoint e regra em camadas.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>Quality</b>Verifica API real e jornada completa.</div>
+        <span class="arrow">→</span>
+        <div class="step"><b>CI</b>Executa as verificações em cada alteração.</div>
+      </div>
+      <p class="lead">Testes unitários localizam defeitos de lógica. Testes de API e E2E detectam problemas de integração e comportamento. As equipes trabalham em paralelo porque compartilham um contrato verificável.</p>
+    </section>
+  </main>
+
+  <nav class="toolbar" aria-label="Controles da apresentação">
+    <button type="button" id="previous" aria-label="Slide anterior">Anterior</button>
+    <span class="counter" id="counter" aria-live="polite"></span>
+    <button type="button" id="next" aria-label="Próximo slide">Próximo</button>
+    <button type="button" id="print">Imprimir / PDF</button>
+  </nav>
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    let current = 0;
+
+    function showSlide(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, position) => {
+        slide.classList.toggle('active', position === current);
+        slide.setAttribute('aria-hidden', String(position !== current));
+      });
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+      document.title = `${current + 1}/${slides.length} — PE_Example: Backend e Quality`;
+    }
+
+    document.getElementById('previous').addEventListener('click', () => showSlide(current - 1));
+    document.getElementById('next').addEventListener('click', () => showSlide(current + 1));
+    document.getElementById('print').addEventListener('click', () => window.print());
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) showSlide(current + 1);
+      if (['ArrowLeft', 'PageUp'].includes(event.key)) showSlide(current - 1);
+      if (event.key === 'Home') showSlide(0);
+      if (event.key === 'End') showSlide(slides.length - 1);
+    });
+
+    showSlide(0);
+  </script>
+</body>
+</html>
