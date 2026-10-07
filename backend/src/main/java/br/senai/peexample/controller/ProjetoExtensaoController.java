@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/projetos-extensao")
@@ -20,8 +22,10 @@ public class ProjetoExtensaoController {
     private final ProjetoExtensaoService projetoExtensaoService;
 
     @GetMapping
-    public ResponseEntity<List<ProjetoExtensaoDTO>> listarTodos() {
-        return ResponseEntity.ok(projetoExtensaoService.listarTodos());
+    public ResponseEntity<Page<ProjetoExtensaoDTO>> listarTodos(
+            @RequestParam(required = false) String busca,
+            @PageableDefault(size = 10, sort = "titulo") Pageable pageable) {
+        return ResponseEntity.ok(projetoExtensaoService.listarTodos(busca, pageable));
     }
 
     @GetMapping("/{id}")

@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Usuario, UsuarioCreateDTO, TipoUsuario, StatusUsuario } from '../types';
-import { usuarioService } from '../services/api';
+import { apiErrorMessage, usuarioService } from '../services/api';
+import { AlertMessage } from '../components/AlertMessage';
+import { DataTable } from '../components/DataTable';
+import { PaginationControls } from '../components/PaginationControls';
 
 export const UsuariosPage: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+  const [pagina, setPagina] = useState(0);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<UsuarioCreateDTO>({
@@ -20,9 +27,11 @@ export const UsuariosPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await usuarioService.listarTodos();
-      setUsuarios(data);
-    } catch (err: any) {
+      const data = await usuarioService.listarTodos(pagina, busca);
+      setUsuarios(data.content);
+      setTotalPaginas(data.totalPages);
+      setTotalUsuarios(data.totalElements);
+    } catch {
       setError('Erro ao carregar lista de usuários. Verifique se o backend está em execução.');
     } finally {
       setLoading(false);
@@ -31,7 +40,7 @@ export const UsuariosPage: React.FC = () => {
 
   useEffect(() => {
     carregandoUsuarios();
-  }, []);
+  }, [pagina, busca]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +55,8 @@ export const UsuariosPage: React.FC = () => {
       }
       resetForm();
       carregandoUsuarios();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.error || 'Erro ao salvar usuário.';
-      setError(msg);
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, 'Erro ao salvar usuário.'));
     }
   };
 
@@ -69,8 +77,8 @@ export const UsuariosPage: React.FC = () => {
       await usuarioService.deletar(id);
       setSuccess('Usuário removido com sucesso!');
       carregandoUsuarios();
-    } catch (err: any) {
-      setError('Erro ao deletar usuário.');
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, 'Erro ao deletar usuário.'));
     }
   };
 
@@ -83,11 +91,11 @@ export const UsuariosPage: React.FC = () => {
     <div className="container my-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>👥 Gestão de Usuários</h2>
-        <span className="badge bg-secondary">{usuarios.length} Usuários Cadastrados</span>
+        <span className="badge bg-secondary">{totalUsuarios} Usuários Cadastrados</span>
       </div>
 
-      {error && <div className="alert alert-danger alert-dismissible">{error}</div>}
-      {success && <div className="alert alert-success alert-dismissible">{success}</div>}
+      {error && <AlertMessage variant="danger">{error}</AlertMessage>}
+      {success && <AlertMessage variant="success">{success}</AlertMessage>}
 
       <div className="row g-4">
         {/* Form Column */}
@@ -163,52 +171,66 @@ export const UsuariosPage: React.FC = () => {
         <div className="col-md-8">
           <div className="card shadow-sm">
             <div className="card-header bg-white fw-bold">Lista de Usuários</div>
+            <div className="p-3">
+              <input
+                aria-label="Buscar usuários"
+                className="form-control"
+                placeholder="Buscar por nome ou e-mail"
+                value={busca}
+                onChange={(event) => {
+                  setPagina(0);
+                  setBusca(event.target.value);
+                }}
+              />
+            </div>
             <div className="card-body p-0">
-              {loading ? (
-                <div className="p-4 text-center">Carregando usuários...</div>
-              ) : usuarios.length === 0 ? (
-                <div className="p-4 text-center text-muted">Nenhum usuário cadastrado.</div>
-              ) : (
-                <table className="table table-hover align-middle mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>ID</th>
-                      <th>Nome</th>
-                      <th>E-mail</th>
-                      <th>Tipo</th>
-                      <th>Status</th>
-                      <th className="text-end">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usuarios.map((u) => (
-                      <tr key={u.id}>
-                        <td>{u.id}</td>
-                        <td className="fw-semibold">{u.nome}</td>
-                        <td>{u.email}</td>
-                        <td>
-                          <span className={`badge ${u.tipo === 'PROFESSOR' ? 'bg-info' : u.tipo === 'ADMINISTRADOR' ? 'bg-danger' : 'bg-secondary'}`}>
-                            {u.tipo}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${u.status === 'ATIVO' ? 'bg-success' : 'bg-warning text-dark'}`}>
-                            {u.status}
-                          </span>
-                        </td>
-                        <td className="text-end">
-                          <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(u)}>
-                            Editar
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(u.id)}>
-                            Excluir
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <DataTable
+                rows={usuarios}
+                loading={loading}
+                emptyMessage="Nenhum usuário cadastrado."
+                rowKey={(usuario) => usuario.id}
+                columns={[
+                  { header: 'ID', render: (usuario) => usuario.id },
+                  { header: 'Nome', render: (usuario) => <span className="fw-semibold">{usuario.nome}</span> },
+                  { header: 'E-mail', render: (usuario) => usuario.email },
+                  {
+                    header: 'Tipo',
+                    render: (usuario) => (
+                      <span className={`badge ${usuario.tipo === 'PROFESSOR' ? 'bg-info' : usuario.tipo === 'ADMINISTRADOR' ? 'bg-danger' : 'bg-secondary'}`}>
+                        {usuario.tipo}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: 'Status',
+                    render: (usuario) => (
+                      <span className={`badge ${usuario.status === 'ATIVO' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                        {usuario.status}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: 'Ações',
+                    className: 'text-end',
+                    render: (usuario) => (
+                      <>
+                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(usuario)}>
+                          Editar
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(usuario.id)}>
+                          Excluir
+                        </button>
+                      </>
+                    ),
+                  },
+                ]}
+              />
+              <PaginationControls
+                currentPage={pagina}
+                totalPages={totalPaginas}
+                loading={loading}
+                onPageChange={setPagina}
+              />
             </div>
           </div>
         </div>

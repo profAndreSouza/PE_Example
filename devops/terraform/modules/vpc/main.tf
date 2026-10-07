@@ -1,4 +1,10 @@
-variable "environment" { type = string }
+variable "environment" {
+  type = string
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -11,25 +17,15 @@ resource "aws_vpc" "main" {
   }
 }
 
-resource "aws_subnet" "public_1" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = true
+resource "aws_subnet" "private" {
+  count             = 2
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.${count.index + 1}.0/24"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name = "pe-example-public-subnet-1"
-  }
-}
-
-resource "aws_subnet" "public_2" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "us-east-1b"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "pe-example-public-subnet-2"
+    Name        = "pe-example-private-${count.index + 1}-${var.environment}"
+    Environment = var.environment
   }
 }
 
@@ -37,6 +33,6 @@ output "vpc_id" {
   value = aws_vpc.main.id
 }
 
-output "public_subnet_ids" {
-  value = [aws_subnet.public_1.id, aws_subnet.public_2.id]
+output "private_subnet_ids" {
+  value = aws_subnet.private[*].id
 }

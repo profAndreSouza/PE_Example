@@ -18,6 +18,8 @@ Este diretório contém os artefatos de **Infraestrutura como Código (IaC)** em
 ### Pré-requisitos
 - Terraform CLI 1.5+ instalado.
 - Credenciais da AWS configuradas (`aws configure`).
+- Uma imagem do backend publicada como imagem pública compatível com o App Runner.
+- Senha de RDS fornecida por variável de ambiente ou arquivo de variáveis local não versionado.
 
 ### Comandos Principais
 
@@ -33,6 +35,12 @@ terraform fmt -check -recursive
 # Validar sintaxe dos módulos
 terraform validate
 
-# Planejar as alterações na infraestrutura AWS
+# Planejar com variáveis fornecidas sem gravar segredos no repositório
+$env:TF_VAR_db_password = "<senha-com-pelo-menos-16-caracteres>"
+$env:TF_VAR_app_image_identifier = "public.ecr.aws/<alias>/<repositorio>:<tag>"
 terraform plan
 ```
+
+O módulo cria sub-redes privadas para RDS e App Runner, restringe a porta 5432 ao security group do backend e injeta a senha do banco via AWS Secrets Manager. Use backend remoto de estado criptografado e IAM de menor privilégio fora de exercícios locais; o estado do Terraform ainda pode conter valores sensíveis.
+
+Os recursos AWS podem gerar custos. O `docker compose up --build` da raiz é o caminho recomendado para executar o projeto didático localmente sem provisionar nuvem.

@@ -11,10 +11,10 @@ import br.senai.peexample.model.Usuario;
 import br.senai.peexample.repository.ProjetoExtensaoRepository;
 import br.senai.peexample.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,10 +24,12 @@ public class ProjetoExtensaoService {
     private final UsuarioRepository usuarioRepository;
 
     @Transactional(readOnly = true)
-    public List<ProjetoExtensaoDTO> listarTodos() {
-        return projetoExtensaoRepository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+    public Page<ProjetoExtensaoDTO> listarTodos(String busca, Pageable pageable) {
+        Page<ProjetoExtensao> projetos = busca == null || busca.isBlank()
+                ? projetoExtensaoRepository.findAll(pageable)
+                : projetoExtensaoRepository.findByTituloContainingIgnoreCaseOrDescricaoContainingIgnoreCase(
+                        busca.trim(), busca.trim(), pageable);
+        return projetos.map(this::toDTO);
     }
 
     @Transactional(readOnly = true)

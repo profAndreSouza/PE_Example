@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ProjetoExtensao, ProjetoExtensaoCreateDTO, StatusProjeto, Usuario } from '../types';
-import { projetoService, usuarioService } from '../services/api';
+import { apiErrorMessage, projetoService, usuarioService } from '../services/api';
+import { AlertMessage } from '../components/AlertMessage';
+import { DataTable } from '../components/DataTable';
+import { PaginationControls } from '../components/PaginationControls';
 
 export const ProjetosPage: React.FC = () => {
   const [projetos, setProjetos] = useState<ProjetoExtensao[]>([]);
@@ -8,6 +11,10 @@ export const ProjetosPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+  const [pagina, setPagina] = useState(0);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalProjetos, setTotalProjetos] = useState(0);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ProjetoExtensaoCreateDTO>({
@@ -24,15 +31,18 @@ export const ProjetosPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const [projs, users] = await Promise.all([
-        projetoService.listarTodos(),
-        usuarioService.listarTodos(),
+        projetoService.listarTodos(pagina, busca),
+        usuarioService.listarTodos(0, '', 100),
       ]);
-      setProjetos(projs);
-      setProfessores(users.filter((u) => u.tipo === 'PROFESSOR' && u.status === 'ATIVO'));
-      if (users.length > 0 && formData.coordenadorId === 0) {
-        setFormData((prev) => ({ ...prev, coordenadorId: users[0].id }));
+      const coordenadoresAtivos = users.content.filter((u) => u.tipo === 'PROFESSOR' && u.status === 'ATIVO');
+      setProjetos(projs.content);
+      setTotalPaginas(projs.totalPages);
+      setTotalProjetos(projs.totalElements);
+      setProfessores(coordenadoresAtivos);
+      if (coordenadoresAtivos.length > 0 && formData.coordenadorId === 0) {
+        setFormData((prev) => ({ ...prev, coordenadorId: coordenadoresAtivos[0].id }));
       }
-    } catch (err: any) {
+    } catch {
       setError('Erro ao carregar dados dos projetos ou professores.');
     } finally {
       setLoading(false);
@@ -41,7 +51,7 @@ export const ProjetosPage: React.FC = () => {
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [pagina, busca]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,9 +70,8 @@ export const ProjetosPage: React.FC = () => {
       }
       resetForm();
       carregarDados();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.error || 'Erro ao salvar projeto.';
-      setError(msg);
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, 'Erro ao salvar projeto.'));
     }
   };
 
@@ -85,8 +94,8 @@ export const ProjetosPage: React.FC = () => {
       await projetoService.deletar(id);
       setSuccess('Projeto removido com sucesso!');
       carregarDados();
-    } catch (err: any) {
-      setError('Erro ao deletar projeto.');
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, 'Erro ao deletar projeto.'));
     }
   };
 
@@ -106,11 +115,11 @@ export const ProjetosPage: React.FC = () => {
     <div className="container my-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>📋 Gestão de Projetos de Extensão</h2>
-        <span className="badge bg-secondary">{projetos.length} Projetos Cadastrados</span>
+        <span className="badge bg-secondary">{totalProjetos} Projetos Cadastrados</span>
       </div>
 
-      {error && <div className="alert alert-danger alert-dismissible">{error}</div>}
-      {success && <div className="alert alert-success alert-dismissible">{success}</div>}
+      {error && <AlertMessage variant="danger">{error}</AlertMessage>}
+      {success && <AlertMessage variant="success">{success}</AlertMessage>}
 
       <div className="row g-4">
         {/* Form Column */}
@@ -213,67 +222,84 @@ export const ProjetosPage: React.FC = () => {
         <div className="col-md-8">
           <div className="card shadow-sm">
             <div className="card-header bg-white fw-bold">Lista de Projetos de Extensão</div>
+            <div className="p-3">
+              <input
+                aria-label="Buscar projetos"
+                className="form-control"
+                placeholder="Buscar por título ou descrição"
+                value={busca}
+                onChange={(event) => {
+                  setPagina(0);
+                  setBusca(event.target.value);
+                }}
+              />
+            </div>
             <div className="card-body p-0">
-              {loading ? (
-                <div className="p-4 text-center">Carregando projetos...</div>
-              ) : projetos.length === 0 ? (
-                <div className="p-4 text-center text-muted">Nenhum projeto cadastrado.</div>
-              ) : (
-                <table className="table table-hover align-middle mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>ID</th>
-                      <th>Título</th>
-                      <th>Coordenador</th>
-                      <th>Status</th>
-                      <th>Início / Fim</th>
-                      <th className="text-end">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projetos.map((p) => (
-                      <tr key={p.id}>
-                        <td>{p.id}</td>
-                        <td>
-                          <div className="fw-semibold">{p.titulo}</div>
-                          <small className="text-muted d-block text-truncate" style={{ maxWidth: '250px' }}>
-                            {p.descricao}
-                          </small>
-                        </td>
-                        <td>{p.coordenadorNome || `ID: ${p.coordenadorId}`}</td>
-                        <td>
-                          <span
-                            className={`badge ${
-                              p.status === 'EM_ANDAMENTO'
-                                ? 'bg-primary'
-                                : p.status === 'CONCLUIDO'
-                                ? 'bg-success'
-                                : p.status === 'CANCELADO'
-                                ? 'bg-danger'
-                                : 'bg-warning text-dark'
-                            }`}
-                          >
-                            {p.status}
-                          </span>
-                        </td>
-                        <td>
-                          <small>
-                            {p.dataInicio} {p.dataFim ? `até ${p.dataFim}` : ''}
-                          </small>
-                        </td>
-                        <td className="text-end">
-                          <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(p)}>
-                            Editar
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(p.id)}>
-                            Excluir
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <DataTable
+                rows={projetos}
+                loading={loading}
+                emptyMessage="Nenhum projeto cadastrado."
+                rowKey={(projeto) => projeto.id}
+                columns={[
+                  { header: 'ID', render: (projeto) => projeto.id },
+                  {
+                    header: 'Título',
+                    render: (projeto) => (
+                      <>
+                        <div className="fw-semibold">{projeto.titulo}</div>
+                        <small className="text-muted d-block text-truncate" style={{ maxWidth: '250px' }}>
+                          {projeto.descricao}
+                        </small>
+                      </>
+                    ),
+                  },
+                  { header: 'Coordenador', render: (projeto) => projeto.coordenadorNome || `ID: ${projeto.coordenadorId}` },
+                  {
+                    header: 'Status',
+                    render: (projeto) => (
+                      <span
+                        className={`badge ${
+                          projeto.status === 'EM_ANDAMENTO'
+                            ? 'bg-primary'
+                            : projeto.status === 'CONCLUIDO'
+                            ? 'bg-success'
+                            : projeto.status === 'CANCELADO'
+                            ? 'bg-danger'
+                            : 'bg-warning text-dark'
+                        }`}
+                      >
+                        {projeto.status}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: 'Início / Fim',
+                    render: (projeto) => (
+                      <small>{projeto.dataInicio} {projeto.dataFim ? `até ${projeto.dataFim}` : ''}</small>
+                    ),
+                  },
+                  {
+                    header: 'Ações',
+                    className: 'text-end',
+                    render: (projeto) => (
+                      <>
+                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(projeto)}>
+                          Editar
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(projeto.id)}>
+                          Excluir
+                        </button>
+                      </>
+                    ),
+                  },
+                ]}
+              />
+              <PaginationControls
+                currentPage={pagina}
+                totalPages={totalPaginas}
+                loading={loading}
+                onPageChange={setPagina}
+              />
             </div>
           </div>
         </div>

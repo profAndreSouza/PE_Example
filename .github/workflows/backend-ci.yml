@@ -28,4 +28,4 @@ jobs:
       - name: Build with Maven and Run Unit Tests
         run: |
           cd backend
-          mvn clean test
+          mvn --batch-mode clean verify

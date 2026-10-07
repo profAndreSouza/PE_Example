@@ -8,10 +8,10 @@ import br.senai.peexample.model.StatusUsuario;
 import br.senai.peexample.model.Usuario;
 import br.senai.peexample.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,10 +20,12 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
 
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> listarTodos() {
-        return usuarioRepository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+    public Page<UsuarioDTO> listarTodos(String busca, Pageable pageable) {
+        Page<Usuario> usuarios = busca == null || busca.isBlank()
+                ? usuarioRepository.findAll(pageable)
+                : usuarioRepository.findByNomeContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                        busca.trim(), busca.trim(), pageable);
+        return usuarios.map(this::toDTO);
     }
 
     @Transactional(readOnly = true)

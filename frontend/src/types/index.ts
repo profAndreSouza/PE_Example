@@ -10,6 +10,16 @@ export interface Usuario {
   dataCriacao?: string;
 }
 
+export interface Pagina<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}
+
 export interface UsuarioCreateDTO {
   nome: string;
   email: string;

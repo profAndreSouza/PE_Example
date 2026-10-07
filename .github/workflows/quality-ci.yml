@@ -1,0 +1,34 @@
+name: Quality Integration and E2E
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'banco_dados/**'
+      - 'quality/**'
+      - 'compose.yaml'
+      - '.github/workflows/quality-ci.yml'
+  pull_request:
+    branches: [ main, dev ]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'banco_dados/**'
+      - 'quality/**'
+      - 'compose.yaml'
+      - '.github/workflows/quality-ci.yml'
+
+jobs:
+  integration-and-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run API and browser suites against Docker Compose
+        run: docker compose --profile quality run --build --rm quality
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
