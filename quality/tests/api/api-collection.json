@@ -1,0 +1,66 @@
+{
+  "info": {
+    "name": "PE Example — API Test Suite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Usuários",
+      "item": [
+        {
+          "name": "Listar Usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "usuarios"]
+            }
+          }
+        },
+        {
+          "name": "Criar Usuário Valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Aluno Teste QA\",\n  \"email\": \"qa.aluno@senai.br\",\n  \"tipo\": \"ALUNO\",\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "usuarios"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projetos de Extensão",
+      "item": [
+        {
+          "name": "Listar Projetos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/projetos-extensao",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "projetos-extensao"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
